@@ -10,16 +10,19 @@ const int DHTTYPE = DHT11;
 char ssid[] = "hayday";
 char password[] = "Van@#The1981";
 
+extern String RID;
+extern String Rfull;
+
 WiFiServer wifiServer(80);
 
 String ts, hs, content;
 DHT dht(DHTPIN, DHTTYPE);
-char host[] = "thmnt.ml";
+char host[] = "192.168.100.12";
 int port = 80;
 void setup()
 {
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   delay(10);
   pinMode(DHTPIN, INPUT);
   dht.begin();
@@ -74,7 +77,7 @@ void loop()
       measureTH();
       WFclient.println(ts + "," + hs);
       content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + "}";
-      client.sendJSON("db", content);
+      client.send("db", content);
       delay(5000);
       while (WFclient.available()) {
         char c = WFclient.read();
@@ -86,9 +89,14 @@ void loop()
   } else {
     measureTH();
     content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + "}";
-    client.sendJSON("db", content);
+    client.send("db", content);
     delay(5000);
   }
+
+  if(client.monitor()){
+      Serial.println(RID);
+      Serial.println(Rfull);
+      }
 
 
 
