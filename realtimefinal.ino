@@ -1,26 +1,52 @@
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <SocketIOClient.h>
+#include <MQ135.h>
 #include <DHT.h>
 #include <string.h>
 SocketIOClient client;
 #define QUOTE "\""
-const int DHTPIN = 2;
+const int DHTPIN = 4;
 const int DHTTYPE = DHT11;
+const int PIN_MQ135 = 17;
 
-char ssid[] = "hayday";
-char password[] = "Van@#The1981";
+const int led1 = 5;
+const int led3 = 0;
+const int led4 = 2;
+const int led5 = 14;
+const int led6 = 12;
+const int led7 = 13;
 
+MQ135 mq135_sensor = MQ135(PIN_MQ135);
+
+char ssid[] = "PASS 12345678";
+char password[] = "toluaday";
 extern String RID;
 extern String Rfull;
+String ON = "ON";
+String OFF = "OFF";
+int ledState;
+int ledNum;
+int serialInt;
 
 WiFiServer wifiServer(80);
 
-String ts, hs, content;
+boolean state = false;
+
+String ts, hs, content, ps;
 DHT dht(DHTPIN, DHTTYPE);
-char host[] = "192.168.100.12";
+char host[] = "thmnt.ml";
 int port = 80;
+
+
 void setup()
 {
+  pinMode(led1, OUTPUT);
+  pinMode(led3, OUTPUT);
+  pinMode(led4, OUTPUT);
+  pinMode(led5, OUTPUT);
+  pinMode(led6, OUTPUT);
+  pinMode(led7, OUTPUT);
 
   Serial.begin(115200);
   delay(10);
@@ -51,32 +77,61 @@ void setup()
   wifiServer.begin();
 }
 
+void lightControl() {
+  if (Serial.available() > 0) {
+    serialInt = Serial.parseInt();
+  }
+  ledState = serialInt % 10;
+  ledNum = serialInt / 10;
+  if (ledState == 1) {
+    if (ledNum == 1)digitalWrite(led1, HIGH);
+
+    if (ledNum == 3)digitalWrite(led3, HIGH);
+    if (ledNum == 4)digitalWrite(led4, HIGH);
+    if (ledNum == 5)digitalWrite(led5, HIGH);
+    if (ledNum == 6)digitalWrite(led6, HIGH);
+    if (ledNum == 7)digitalWrite(led7, HIGH);
+  } else {
+    if (ledNum == 1)digitalWrite(led1, LOW);
+
+    if (ledNum == 3)digitalWrite(led3, LOW);
+    if (ledNum == 4)digitalWrite(led4, LOW);
+    if (ledNum == 5)digitalWrite(led5, LOW);
+    if (ledNum == 6)digitalWrite(led6, LOW);
+    if (ledNum == 7)digitalWrite(led7, LOW);
+  }
+}
+
 
 void measureTH() {
+  float ppm = mq135_sensor.getPPM();
+
   float h = dht.readHumidity();
   float t = dht.readTemperature();
-  //  ts = String(random(0, 100));
-  //  hs = String(random(0, 100));
+  float p = mq135_sensor.getCorrectedPPM(t, h);
 
+  ps = String(p);
   ts = String(t);
   hs = String(h);
 
   Serial.print(ts);
   Serial.print(",");
   Serial.print(hs);
+  Serial.print(",");
+  Serial.print(ps);
   Serial.println();
 }
 
 
 void loop()
 {
-
+  //  digitalWrite(led5, HIGH);
   WiFiClient WFclient = wifiServer.available();
   if (WFclient) {
     while (WFclient.connected()) {
       measureTH();
-      WFclient.println(ts + "," + hs);
-      content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + "}";
+      WFclient.println(ts + "," + hs + "," + ps);
+      content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + ","QUOTE"ppm"QUOTE":" + ps + "}";
       client.send("db", content);
       delay(5000);
       while (WFclient.available()) {
@@ -87,16 +142,31 @@ void loop()
     WFclient.stop();
     Serial.println("Client disconnected");
   } else {
+    lightControl();
     measureTH();
-    content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + "}";
+    content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + ","QUOTE"ppm"QUOTE":" + ps + "}";
     client.send("db", content);
-    delay(5000);
+    if (client.monitor()) {
+      const size_t bufferSize = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(8) + 370;
+      DynamicJsonDocument  doc(bufferSize);
+      deserializeJson(doc, Rfull);
+      boolean stateLight = doc["state"];
+      //      Serial.println(stateLight);
+      if (stateLight == 1) {
+        //        Serial.println("ON JSON");
+        digitalWrite(led5, HIGH);
+        client.send("toggle", "ON");
+      }
+      if (stateLight == 0) {
+        //        Serial.println("OFF JSON");
+        digitalWrite(led5, LOW);
+        client.send("toggle", "OFF");
+      }
+      //      Serial.println(Rfull);
+    }
+    delay(500);
   }
 
-  if(client.monitor()){
-      Serial.println(RID);
-      Serial.println(Rfull);
-      }
 
 
 
