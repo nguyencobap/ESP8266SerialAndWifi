@@ -77,7 +77,31 @@ void setup()
   wifiServer.begin();
 }
 
-void lightControl() {
+//void lightControlWifi() {
+//  if (WFclient.available()) {
+//    serialInt = WFclient.parseInt();
+//    Serial.write(serialInt);
+//  }
+//  if (ledState == 1) {
+//    if (ledNum == 1)digitalWrite(led1, HIGH);
+//
+//    if (ledNum == 3)digitalWrite(led3, HIGH);
+//    if (ledNum == 4)digitalWrite(led4, HIGH);
+//    if (ledNum == 5)digitalWrite(led5, HIGH);
+//    if (ledNum == 6)digitalWrite(led6, HIGH);
+//    if (ledNum == 7)digitalWrite(led7, HIGH);
+//  } else {
+//    if (ledNum == 1)digitalWrite(led1, LOW);
+//
+//    if (ledNum == 3)digitalWrite(led3, LOW);
+//    if (ledNum == 4)digitalWrite(led4, LOW);
+//    if (ledNum == 5)digitalWrite(led5, LOW);
+//    if (ledNum == 6)digitalWrite(led6, LOW);
+//    if (ledNum == 7)digitalWrite(led7, LOW);
+//  }
+//}
+
+void lightControlSerial() {
   if (Serial.available() > 0) {
     serialInt = Serial.parseInt();
   }
@@ -133,16 +157,13 @@ void loop()
       WFclient.println(ts + "," + hs + "," + ps);
       content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + ","QUOTE"ppm"QUOTE":" + ps + "}";
       client.send("db", content);
-      delay(5000);
-      while (WFclient.available()) {
-        char c = WFclient.read();
-        Serial.write(c);
-      }
+      delay(500);
+
     }
     WFclient.stop();
     Serial.println("Client disconnected");
   } else {
-    lightControl();
+    lightControlSerial();
     measureTH();
     content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + ","QUOTE"ppm"QUOTE":" + ps + "}";
     client.send("db", content);
