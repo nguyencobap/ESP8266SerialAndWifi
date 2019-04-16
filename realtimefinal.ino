@@ -29,9 +29,11 @@ int ledState;
 int ledNum;
 int serialInt;
 
+const size_t bufferSize = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(8) + 370;
+DynamicJsonDocument  doc(bufferSize);
+String stateLight;
 WiFiServer wifiServer(80);
 
-boolean state = false;
 
 String ts, hs, content, ps;
 DHT dht(DHTPIN, DHTTYPE);
@@ -163,28 +165,33 @@ void loop()
     WFclient.stop();
     Serial.println("Client disconnected");
   } else {
+    if (client.monitor()) {
+      deserializeJson(doc, Rfull);
+      JsonObject obj = doc.as<JsonObject>();
+      stateLight = obj["state"].as<String>();;
+      Serial.println(stateLight);
+    }
+    if ( stateLight == "true") {
+      digitalWrite(led7, HIGH);
+    } if (stateLight == "false") {
+      digitalWrite(led7, LOW);
+    }
+
+    if (digitalRead(led7) == 1) {
+      String statepin7 = "{"QUOTE"ledState"QUOTE":true}";
+      Serial.println("ON");
+      client.send("toggle", statepin7);
+    }
+    else {
+      String statepin7 = "{"QUOTE"ledState"QUOTE":false}";
+      Serial.println("OFF");
+      client.send("toggle",statepin7 );
+    }
+
     lightControlSerial();
     measureTH();
     content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + ","QUOTE"ppm"QUOTE":" + ps + "}";
     client.send("db", content);
-    if (client.monitor()) {
-      const size_t bufferSize = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(8) + 370;
-      DynamicJsonDocument  doc(bufferSize);
-      deserializeJson(doc, Rfull);
-      boolean stateLight = doc["state"];
-      //      Serial.println(stateLight);
-      if (stateLight == 1) {
-        //        Serial.println("ON JSON");
-        digitalWrite(led5, HIGH);
-        client.send("toggle", "ON");
-      }
-      if (stateLight == 0) {
-        //        Serial.println("OFF JSON");
-        digitalWrite(led5, LOW);
-        client.send("toggle", "OFF");
-      }
-      //      Serial.println(Rfull);
-    }
     delay(500);
   }
 
