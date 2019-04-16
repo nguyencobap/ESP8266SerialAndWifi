@@ -169,7 +169,7 @@ void loop()
       deserializeJson(doc, Rfull);
       JsonObject obj = doc.as<JsonObject>();
       stateLight = obj["state"].as<String>();;
-      Serial.println(stateLight);
+//      Serial.println(stateLight);
     }
     if ( stateLight == "true") {
       digitalWrite(led7, HIGH);
@@ -179,12 +179,12 @@ void loop()
 
     if (digitalRead(led7) == 1) {
       String statepin7 = "{"QUOTE"ledState"QUOTE":true}";
-      Serial.println("ON");
+ 
       client.send("toggle", statepin7);
     }
     else {
       String statepin7 = "{"QUOTE"ledState"QUOTE":false}";
-      Serial.println("OFF");
+   
       client.send("toggle",statepin7 );
     }
 
