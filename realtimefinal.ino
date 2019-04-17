@@ -37,7 +37,7 @@ WiFiServer wifiServer(80);
 
 String ts, hs, content, ps;
 DHT dht(DHTPIN, DHTTYPE);
-char host[] = "thmnt.ml";
+char host[] = "192.168.1.93";
 int port = 80;
 
 
@@ -159,34 +159,25 @@ void loop()
       WFclient.println(ts + "," + hs + "," + ps);
       content = "{"QUOTE"temp"QUOTE":" + ts + ","QUOTE"humi"QUOTE":" + hs + ","QUOTE"ppm"QUOTE":" + ps + "}";
       client.send("db", content);
+
+      if (client.monitor()) {
+        deserializeJson(doc, Rfull);
+        JsonObject obj = doc.as<JsonObject>();
+        stateLight = obj["state"].as<String>();;
+      }
+      if ( stateLight == "true") {
+        digitalWrite(led7, HIGH);
+      } if (stateLight == "false") {
+        digitalWrite(led7, LOW);
+      }
       delay(500);
 
     }
     WFclient.stop();
     Serial.println("Client disconnected");
   } else {
-    if (client.monitor()) {
-      deserializeJson(doc, Rfull);
-      JsonObject obj = doc.as<JsonObject>();
-      stateLight = obj["state"].as<String>();;
-//      Serial.println(stateLight);
-    }
-    if ( stateLight == "true") {
-      digitalWrite(led7, HIGH);
-    } if (stateLight == "false") {
-      digitalWrite(led7, LOW);
-    }
 
-    if (digitalRead(led7) == 1) {
-      String statepin7 = "{"QUOTE"ledState"QUOTE":true}";
- 
-      client.send("toggle", statepin7);
-    }
-    else {
-      String statepin7 = "{"QUOTE"ledState"QUOTE":false}";
-   
-      client.send("toggle",statepin7 );
-    }
+
 
     lightControlSerial();
     measureTH();
@@ -195,7 +186,16 @@ void loop()
     delay(500);
   }
 
-
+  if (client.monitor()) {
+    deserializeJson(doc, Rfull);
+    JsonObject obj = doc.as<JsonObject>();
+    stateLight = obj["state"].as<String>();;
+  }
+  if ( stateLight == "true") {
+    digitalWrite(led7, HIGH);
+  } if (stateLight == "false") {
+    digitalWrite(led7, LOW);
+  }
 
 
 
