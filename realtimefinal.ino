@@ -19,8 +19,8 @@ const int led7 = 13;
 
 MQ135 mq135_sensor = MQ135(PIN_MQ135);
 
-char ssid[] = "PASS 12345678";
-char password[] = "toluaday";
+char ssid[] = "NguyenCongSan";
+char password[] = "12345678";
 extern String RID;
 extern String Rfull;
 String ON = "ON";
@@ -37,7 +37,7 @@ WiFiServer wifiServer(80);
 
 String ts, hs, content, ps;
 DHT dht(DHTPIN, DHTTYPE);
-char host[] = "192.168.1.93";
+char host[] = "thmnt.ml";
 int port = 80;
 
 
